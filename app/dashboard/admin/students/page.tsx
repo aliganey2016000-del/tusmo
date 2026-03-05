@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
+// 1. SAX: Ku dar import-kan hoose si TypeScript u garato 'Student'
+import { Student } from "@prisma/client"; 
 import { addStudent, deleteStudent, updateStudent } from "@/app/actions/studentActions";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -13,15 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Search, Trash2, UserPlus, Pencil, Users, Phone, UserCircle, X, Loader2 } from "lucide-react";
-import Link from "next/link";
+// 2. SAX: Iska saar 'Link' maadaama aan la isticmaalin
 
 export default function StudentsPage() {
-  const [students, setStudents] = useState<any[]>([]);
+  // 3. SAX: Hadda 'Student[]' waa la garanayaa
+  const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  // 1. Shaqada xogta soo akhrinaysa (Fetch Data)
   const fetchStudents = useCallback(async () => {
     setLoading(true);
     try {
@@ -39,7 +41,6 @@ export default function StudentsPage() {
     fetchStudents();
   }, [fetchStudents]);
 
-  // 2. Shaqada tirtirista (Delete)
   const handleDelete = async (id: string) => {
     if (confirm("Ma hubtaa inaad tirtirto ardaygan?")) {
       await deleteStudent(id);
@@ -156,7 +157,7 @@ export default function StudentsPage() {
                 <TableRow key={student.id} className="hover:bg-slate-50/50 border-slate-100">
                   <TableCell className="py-6 pl-10">
                     <div className="flex items-center gap-4 text-left">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black shadow-lg shadow-blue-100 text-lg">
+                      <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black shadow-lg shadow-blue-100 text-lg">
                         {student.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="text-left">
