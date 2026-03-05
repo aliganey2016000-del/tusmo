@@ -37,7 +37,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 via-white to-indigo-100 p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
         
         {/* Blue Header Section */}
@@ -76,7 +76,7 @@ export default function SignInPage() {
 
           <div className="space-y-2">
             <div className="flex justify-between">
-              <Label htmlFor="password" name="password" className="font-semibold text-gray-700">Password-ka</Label>
+              <Label htmlFor="password" className="font-semibold text-gray-700">Password-ka</Label>
               <Link href="#" className="text-xs text-blue-600 hover:underline">Ma ilowday?</Link>
             </div>
             <div className="relative">
