@@ -16,13 +16,11 @@ import Link from "next/link";
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ query?: string }>; // Halkan waxaa loo beddelay Promise
+  searchParams: Promise<{ query?: string }>;
 }) {
-  // 1. Unwrapping searchParams (Tani waa xalka cilada)
   const resolvedSearchParams = await searchParams;
   const query = resolvedSearchParams?.query || "";
 
-  // 2. Ka soo saar ardayda Database-ka (oo leh Search filter)
   const students = await db.student.findMany({
     where: {
       OR: [
@@ -36,7 +34,6 @@ export default async function StudentsPage({
 
   return (
     <div className="space-y-6">
-      {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-[2rem] border shadow-sm">
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">Maamulka Ardayda</h1>
@@ -48,7 +45,6 @@ export default async function StudentsPage({
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto">
-          {/* SEARCH FORM */}
           <form className="relative flex-1 md:w-64 flex items-center gap-2">
             <div className="relative w-full">
                <Search className="absolute left-3 top-3 text-slate-400" size={18} />
@@ -77,7 +73,8 @@ export default async function StudentsPage({
                 <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight text-left">Diiwaangeli Arday Cusub</DialogTitle>
                 <p className="text-slate-500 text-sm text-left">Fadlan geli xogta saxda ah ee ardayga iyo waalidkiisa.</p>
               </DialogHeader>
-              <form action={addStudent} className="space-y-4 pt-4">
+              {/* FIXED ACTION FOR VERCEL */}
+              <form action={async (formData) => { await addStudent(formData); }} className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-1.5 text-left">
                     <Label className="pl-1 font-bold text-slate-700">Magaca oo Buuxa</Label>
@@ -107,7 +104,7 @@ export default async function StudentsPage({
                     <Input name="parentName" placeholder="Magaca waalidka" className="rounded-xl h-12 bg-slate-50 border-none focus:bg-white transition-all" />
                   </div>
                   <div className="space-y-1.5 md:col-span-2 text-left">
-                    <Label className="pl-1 font-bold text-slate-700 text-left">Telefoonka Waalidka</Label>
+                    <Label className="pl-1 font-bold text-slate-700">Telefoonka Waalidka</Label>
                     <Input name="parentPhone" placeholder="61XXXXXXX" className="rounded-xl h-12 bg-slate-50 border-none focus:bg-white transition-all" />
                   </div>
                 </div>
@@ -122,7 +119,6 @@ export default async function StudentsPage({
         </div>
       </div>
 
-      {/* TABLE SECTION */}
       <div className="bg-white rounded-[2rem] border shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-slate-50/80 backdrop-blur-sm">
@@ -132,7 +128,7 @@ export default async function StudentsPage({
               <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Fasalka</TableHead>
               <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Status</TableHead>
               <TableHead className="text-right font-black text-slate-800 pr-10 uppercase tracking-widest text-[10px]">Tallaabo</TableHead>
-            </TableRow>
+            </tr>
           </TableHeader>
           <TableBody>
             {students.map((student) => (
@@ -171,7 +167,6 @@ export default async function StudentsPage({
                 </TableCell>
                 <TableCell className="text-right pr-8">
                   <div className="flex justify-end gap-2">
-                    {/* EDIT BUTTON */}
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="w-10 h-10 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
@@ -182,7 +177,8 @@ export default async function StudentsPage({
                         <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
                           <DialogTitle className="text-2xl font-black text-slate-800 text-left">Cusboonaysii Xogta</DialogTitle>
                         </DialogHeader>
-                        <form action={updateStudent} className="space-y-4 pt-4 text-left">
+                        {/* FIXED ACTION FOR VERCEL */}
+                        <form action={async (formData) => { await updateStudent(formData); }} className="space-y-4 pt-4 text-left">
                           <input type="hidden" name="id" value={student.id} />
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-1.5">
@@ -220,9 +216,7 @@ export default async function StudentsPage({
                       </DialogContent>
                     </Dialog>
 
-                    {/* DELETE FORM */}
-                    <form action={async (formData) => {
-                      "use server";
+                    <form action={async () => {
                       await deleteStudent(student.id);
                     }}>
                       <Button type="submit" variant="ghost" size="icon" className="w-10 h-10 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all">
@@ -234,7 +228,6 @@ export default async function StudentsPage({
               </TableRow>
             ))}
 
-            {/* EMPTY STATE */}
             {students.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-32 text-slate-400">
