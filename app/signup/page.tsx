@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function SignupPage() {
   return (
@@ -14,7 +15,18 @@ export default function SignupPage() {
 
       <Card className="w-full max-w-lg shadow-sm border-gray-200 rounded-none bg-white">
         <CardContent className="pt-8 px-8">
-          <form action={registerUser} className="space-y-4">
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const result = await registerUser(formData);
+              if (result?.error) {
+                // Handle error (e.g., show a message)
+                alert(result.error);
+              }
+            }}
+            className="space-y-4"
+          >
             
             <div className="space-y-1">
               <Label className="text-xs text-gray-700">First Name</Label>
@@ -54,7 +66,7 @@ export default function SignupPage() {
 
         <CardFooter className="flex flex-col items-center border-t py-6 bg-white gap-4">
           <button className="flex items-center gap-2 border border-gray-300 px-4 py-2 text-[10px] font-bold text-gray-500 hover:bg-gray-50 transition uppercase">
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-3 h-3" />
+            <Image src="https://www.google.com/favicon.ico" alt="Google" width={12} height={12} className="w-3 h-3" />
             Sign in with Google
           </button>
           <p className="text-[10px] text-gray-400">
