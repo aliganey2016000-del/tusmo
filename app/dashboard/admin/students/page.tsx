@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Student } from "@prisma/client";
-import { addStudent, deleteStudent, updateStudent } from "@/app/actions/studentActions";
+// Waxaan halkan ku soo kordhinay autoRejectOldStudents
+import { 
+  addStudent, 
+  deleteStudent, 
+  updateStudent, 
+  approveStudent, 
+  rejectStudent, 
+  autoRejectOldStudents 
+} from "@/app/actions/studentActions";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
@@ -21,7 +29,7 @@ export default function StudentsPage() {
   const [query, setQuery] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  // 1. Fetch Students
+  // 1. Soo helidda Ardayda
   const fetchStudents = useCallback(async () => {
     setLoading(true);
     try {
@@ -35,11 +43,19 @@ export default function StudentsPage() {
     }
   }, [query]);
 
+  // TANI WAA "MASHIINKA" AUTOMATIC-GA AH
   useEffect(() => {
-    fetchStudents();
+    const initializePage = async () => {
+      // A. Marka hore reject garee dadka 3 bari dhaafay ee aan la ansixin
+      await autoRejectOldStudents(); 
+      // B. Ka dib soo raran liiska cusub ee nadiifka ah
+      fetchStudents(); 
+    };
+    
+    initializePage();
   }, [fetchStudents]);
 
-  // 2. Delete Student
+  // 2. Tirtirista
   const handleDelete = async (id: string) => {
     if (confirm("Ma hubtaa inaad tirtirto ardaygan?")) {
       await deleteStudent(id);
@@ -76,17 +92,16 @@ export default function StudentsPage() {
             )}
           </div>
           
-          {/* ADD STUDENT MODAL */}
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="bg-blue-700 hover:bg-blue-800 rounded-full flex gap-2 h-12 px-6 font-bold shadow-lg shadow-blue-100">
                 <UserPlus size={18} /> Ku dar Arday
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden">
+            <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden text-left">
               <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
                 <DialogTitle className="text-2xl font-black text-slate-800 text-left">Diiwaangeli Arday Cusub</DialogTitle>
-                <p className="text-slate-500 text-sm text-left italic">Fadlan geli xogta saxda ah ee ardayga (Dhammaan Fields-ka waa muhiim).</p>
+                <p className="text-slate-500 text-sm text-left italic">Fadlan geli xogta saxda ah ee ardayga.</p>
               </DialogHeader>
               <form 
                 onSubmit={async (e) => {
@@ -108,30 +123,26 @@ export default function StudentsPage() {
                     <Input name="email" type="email" placeholder="ali@gmail.com" required className="rounded-xl h-12 bg-slate-50 border-none" />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Fasalka (Grade)</Label>
+                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Fasalka</Label>
                     <Input name="grade" placeholder="Grade 10" required className="rounded-xl h-12 bg-slate-50 border-none" />
                   </div>
                   <div className="space-y-1.5 text-left">
                     <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Gender</Label>
-                    <select name="gender" className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 font-medium outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                    <select name="gender" className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 font-medium outline-none">
                       <option value="Male">Lab (Male)</option>
                       <option value="Female">Dhedig (Female)</option>
                     </select>
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Telefoonka Ardayga</Label>
+                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Phone</Label>
                     <Input name="phone" placeholder="61XXXXXXX" className="rounded-xl h-12 bg-slate-50 border-none" />
                   </div>
                   <div className="space-y-1.5 text-left">
-                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Magaca Waalidka</Label>
+                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Waalidka</Label>
                     <Input name="parentName" placeholder="Magaca waalidka" className="rounded-xl h-12 bg-slate-50 border-none" />
                   </div>
-                  <div className="space-y-1.5 text-left md:col-span-2">
-                    <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Telefoonka Waalidka</Label>
-                    <Input name="parentPhone" placeholder="61XXXXXXX" className="rounded-xl h-12 bg-slate-50 border-none" />
-                  </div>
                 </div>
-                <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-14 rounded-xl font-black text-lg mt-4 shadow-xl shadow-blue-100 transition-all active:scale-[0.98]">
+                <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-14 rounded-xl font-black text-lg mt-4">
                    Keydi Ardayga
                 </Button>
               </form>
@@ -200,74 +211,92 @@ export default function StudentsPage() {
                         </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right pr-8">
-                    <div className="flex justify-end gap-2">
-                      {/* EDIT MODAL */}
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="w-10 h-10 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
-                            <Pencil size={18} />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden">
-                          <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
-                            <DialogTitle className="text-2xl font-black text-slate-800 text-left tracking-tight">Cusboonaysii Xogta</DialogTitle>
-                            <p className="text-slate-500 text-sm text-left italic">Wax ka baddal xogta ardayga: {student.name}</p>
-                          </DialogHeader>
-                          <form 
-                            onSubmit={async (e) => {
-                              e.preventDefault();
-                              const formData = new FormData(e.currentTarget);
-                              await updateStudent(formData);
-                              fetchStudents();
-                            }} 
-                            className="space-y-4 pt-4 text-left"
-                          >
-                            <input type="hidden" name="id" value={student.id} />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                              <div className="space-y-1.5">
-                                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase tracking-wider">Magaca Ardayga</Label>
-                                <Input name="name" defaultValue={student.name} required className="rounded-xl h-12 bg-slate-50 border-none" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase tracking-wider">Email-ka</Label>
-                                <Input name="email" type="email" defaultValue={student.email} required className="rounded-xl h-12 bg-slate-50 border-none" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase tracking-wider">Fasalka</Label>
-                                <Input name="grade" defaultValue={student.grade} required className="rounded-xl h-12 bg-slate-50 border-none" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase tracking-wider">Gender</Label>
-                                <select name="gender" defaultValue={student.gender} className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 font-medium outline-none">
-                                  <option value="Male">Lab (Male)</option>
-                                  <option value="Female">Dhedig (Female)</option>
-                                </select>
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase tracking-wider">Magaca Waalidka</Label>
-                                <Input name="parentName" defaultValue={student.parentName || ""} className="rounded-xl h-12 bg-slate-50 border-none" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase tracking-wider">Telefoonka Waalidka</Label>
-                                <Input name="parentPhone" defaultValue={student.parentPhone || ""} className="rounded-xl h-12 bg-slate-50 border-none" />
-                              </div>
-                            </div>
-                            <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-14 rounded-xl font-black text-lg mt-4 shadow-lg shadow-blue-50 transition-all active:scale-[0.98]">
-                               Badal Xogta
-                            </Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
 
-                      <Button 
-                        onClick={() => handleDelete(student.id)} 
-                        variant="ghost" 
-                        size="icon" 
-                        className="w-10 h-10 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                      >
-                        <Trash2 size={18} />
-                      </Button>
+                  <TableCell className="text-right pr-8">
+                    <div className="flex justify-end items-center gap-2">
+                      
+                      {/* 1. APPROVE BUTTON */}
+                      {student.status === "Pending" && (
+                        <Button 
+                          onClick={async () => {
+                            if (confirm(`Ma hubtaa inaad ansixiso ${student.name}?`)) {
+                              await approveStudent(student.id);
+                              fetchStudents();
+                            }
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-4 text-[11px] font-black uppercase rounded-xl shadow-lg transition-all active:scale-95"
+                        >
+                          Approve
+                        </Button>
+                      )}
+
+                      {/* 2. REJECT BUTTON */}
+                      {student.status === "Pending" && (
+                        <Button 
+                          onClick={async () => {
+                            const reason = prompt(`Maxaad u diidaysaa ${student.name}? Fadlan qor sababta:`);
+                            if (reason) {
+                              await rejectStudent(student.id, reason);
+                              fetchStudents();
+                            }
+                          }}
+                          className="bg-rose-500 hover:bg-rose-600 text-white h-9 px-4 text-[11px] font-black uppercase rounded-xl shadow-lg transition-all active:scale-95"
+                        >
+                          Reject
+                        </Button>
+                      )}
+
+                      <div className="flex gap-1 ml-2 border-l pl-2 border-slate-100">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-10 h-10 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                              <Pencil size={18} />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden text-left">
+                            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
+                              <DialogTitle className="text-2xl font-black text-slate-800 text-left tracking-tight">Cusboonaysii Xogta</DialogTitle>
+                            </DialogHeader>
+                            <form 
+                              onSubmit={async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                await updateStudent(formData);
+                                fetchStudents();
+                              }} 
+                              className="space-y-4 pt-4 text-left"
+                            >
+                              <input type="hidden" name="id" value={student.id} />
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div className="space-y-1.5">
+                                  <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Magaca</Label>
+                                  <Input name="name" defaultValue={student.name} required className="rounded-xl h-12 bg-slate-50 border-none focus:bg-white" />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Email</Label>
+                                  <Input name="email" type="email" defaultValue={student.email} required className="rounded-xl h-12 bg-slate-50 border-none focus:bg-white" />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Fasalka</Label>
+                                  <Input name="grade" defaultValue={student.grade} required className="rounded-xl h-12 bg-slate-50 border-none focus:bg-white" />
+                                </div>
+                              </div>
+                              <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-14 rounded-xl font-black text-lg mt-4 transition-all">
+                                 Badal Xogta
+                              </Button>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+
+                        <Button 
+                          onClick={() => handleDelete(student.id)} 
+                          variant="ghost" 
+                          size="icon" 
+                          className="w-10 h-10 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                        >
+                          <Trash2 size={18} />
+                        </Button>
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -281,7 +310,7 @@ export default function StudentsPage() {
                            <Users size={48} className="text-slate-200" />
                         </div>
                         <p className="font-black text-slate-800 text-xl tracking-tight">Ma jiraan arday la helay</p>
-                        <p className="text-sm font-medium">Isku day inaad raadiso magac kale ama ku dar arday cusub.</p>
+                        <p className="text-sm font-medium">Liisku iskiis ayuu isku nadiifiyay dadka duugoobay.</p>
                      </div>
                   </TableCell>
                 </TableRow>

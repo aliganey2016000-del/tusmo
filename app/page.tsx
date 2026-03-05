@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users, GraduationCap, Award, Phone, Mail, MapPin } from "lucide-react";
-import Link from "next/link";
 
 export default function Home() {
   return (
@@ -29,7 +28,7 @@ export default function Home() {
             </div>
           </div>
           <div className="hidden lg:block relative">
-            <div className="w-full h-[400px] bg-blue-200 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center">
+            <div className="w-full h-100 bg-blue-200 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center">
                <GraduationCap size={150} className="text-blue-600 opacity-50" />
                {/* Halkan waxaad dhex dhigi kartaa sawirka school-ka hadhow */}
             </div>

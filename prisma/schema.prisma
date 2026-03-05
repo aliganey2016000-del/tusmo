@@ -1,7 +1,7 @@
 datasource db {
-  provider  = "postgresql" // SQLite ka dhig postgresql
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // Khadkan waa muhiim si Supabase ugu xirmo
+  directUrl = env("DIRECT_URL")
 }
 
 generator client {
@@ -10,21 +10,22 @@ generator client {
 
 // 1. User Model (Authentication-ka)
 model User {
-  id        String   @id @default(cuid())
-  firstName String
-  lastName  String
-  username  String   @unique
-  email     String   @unique
-  password  String
-  role      Role     @default(STUDENT)
+  id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
+  username   String   @unique
+  email      String   @unique
+  password   String
+  role       Role     @default(STUDENT)
+  isApproved Boolean  @default(false)
   
-  // Xiriirka uu la leeyahay Student ama Teacher (Optional)
-  student   Student? @relation(fields: [studentId], references: [id])
-  studentId String?  @unique
-  teacher   Teacher? @relation(fields: [teacherId], references: [id])
-  teacherId String?  @unique
+  // Xiriirka uu la leeyahay Student ama Teacher
+  student    Student? @relation(fields: [studentId], references: [id])
+  studentId  String?  @unique
+  teacher    Teacher? @relation(fields: [teacherId], references: [id])
+  teacherId  String?  @unique
 
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 enum Role {
@@ -35,23 +36,24 @@ enum Role {
 
 // 2. Student Model
 model Student {
-  id            String   @id @default(cuid())
-  name          String
-  email         String   @unique
-  grade         String   
-  gender        String   @default("Male")
-  phone         String?
-  parentName    String?
-  parentPhone   String?
-  status        String   @default("Active")
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  grade           String   
+  gender          String   @default("Male")
+  phone           String?
+  parentName      String?
+  parentPhone     String?
+  status          String   @default("Active")
+  rejectionReason String?  // TANI AYAA CUSUB: Waxay keydinaysaa sababta diidmada
   
-  class         Class?   @relation(fields: [classId], references: [id])
-  classId       String?
+  class           Class?   @relation(fields: [classId], references: [id])
+  classId         String?
   
-  user          User?
-  attendance    Attendance[]
-  results       Result[]
-  createdAt     DateTime @default(now())
+  user            User?
+  attendance      Attendance[]
+  results         Result[]
+  createdAt       DateTime @default(now())
 }
 
 // 3. Teacher Model
