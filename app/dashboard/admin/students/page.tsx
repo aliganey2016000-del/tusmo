@@ -128,14 +128,14 @@ export default async function StudentsPage({
               <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Fasalka</TableHead>
               <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Status</TableHead>
               <TableHead className="text-right font-black text-slate-800 pr-10 uppercase tracking-widest text-[10px]">Tallaabo</TableHead>
-            </tr>
+            </TableRow>
           </TableHeader>
           <TableBody>
             {students.map((student) => (
               <TableRow key={student.id} className="hover:bg-slate-50/50 transition-all border-slate-100">
                 <TableCell className="py-6 pl-10">
                   <div className="flex items-center gap-4 text-left">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black shadow-lg shadow-blue-100 text-lg shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-700 text-white flex items-center justify-center font-black shadow-lg shadow-blue-100 text-lg shrink-0">
                       {student.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="text-left">
