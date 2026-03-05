@@ -58,7 +58,7 @@ export default async function AdminDashboard() {
 
         {/* SIDE ACTIONS */}
         <div className="space-y-6">
-          <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-8 rounded-[2rem] text-white shadow-lg shadow-blue-200">
+          <div className="bg-linear-to-br from-blue-700 to-indigo-800 p-8 rounded-[2rem] text-white shadow-lg shadow-blue-200">
             <h3 className="font-bold text-xl mb-2">School Calendar</h3>
             <p className="text-blue-100 text-sm mb-6">Imtixaanka bisha koowaad wuxuu bilaabanayaa 15-ka March.</p>
             <button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md py-3 rounded-xl font-bold transition-colors">

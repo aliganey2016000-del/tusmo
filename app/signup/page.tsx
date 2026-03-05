@@ -1,3 +1,4 @@
+'use client';
 import { registerUser } from "@/app/actions/authActions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
