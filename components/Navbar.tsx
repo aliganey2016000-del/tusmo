@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 // XALKA: Hubi in halkan ay ku qoran tahay lucide-react (MA AHA lucide-center)
 import { GraduationCap, LogOut, LayoutDashboard } from "lucide-react"; 
 
+type UserWithRole = {
+  name?: string;
+  role?: "ADMIN" | "TEACHER" | "STUDENT" | string;
+  [key: string]: unknown;
+};
+
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -17,7 +23,7 @@ export default function Navbar() {
   }
 
   const getDashboardLink = () => {
-    const role = (session?.user as any)?.role;
+    const role = (session?.user as UserWithRole)?.role;
     if (role === "ADMIN") return "/dashboard/admin";
     if (role === "TEACHER") return "/dashboard/teacher";
     return "/dashboard/student";
@@ -29,7 +35,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           
           {/* Logo Section */}
-          <div className="flex-shrink-0 flex items-center">
+          <div className="shrink-0 flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="bg-blue-700 p-2 rounded-lg group-hover:bg-blue-800 transition">
                 <GraduationCap className="h-6 w-6 text-white" />
@@ -49,6 +55,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Home</Link>
             <Link href="/courses" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Courses</Link>
+            <Link href="/Become-instructor" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Become an Instructor</Link>
 
             {status === "authenticated" && (
               <Link href={getDashboardLink()} className="text-sm font-bold text-blue-700 flex items-center gap-1">
@@ -68,7 +75,7 @@ export default function Navbar() {
                     {session.user?.name}
                   </span>
                   <span className="text-[10px] text-gray-500 font-medium uppercase">
-                    {(session.user as any)?.role}
+                    {(session.user as UserWithRole)?.role}
                   </span>
                 </div>
                 <Button 
