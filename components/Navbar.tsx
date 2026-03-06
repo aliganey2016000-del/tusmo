@@ -1,11 +1,11 @@
 "use client"; 
 
-import { useState } from "react"; // 1. Lagu daray state
+import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation"; 
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut, LayoutDashboard, Menu, X } from "lucide-react"; // 2. Lagu daray Menu iyo X
+import { GraduationCap, LogOut, LayoutDashboard, Menu, X } from "lucide-react"; 
 
 type UserWithRole = {
   name?: string;
@@ -16,7 +16,7 @@ type UserWithRole = {
 export default function Navbar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // 3. State-ka mobile menu-ga
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   if (pathname.startsWith("/dashboard")) {
     return null;
@@ -29,7 +29,6 @@ export default function Navbar() {
     return "/dashboard/student";
   };
 
-  // Shaqo yar oo menu-ga xiraysa marka link la riixo
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
@@ -41,7 +40,7 @@ export default function Navbar() {
           <div className="shrink-0 flex items-center">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="bg-blue-700 p-2 rounded-lg group-hover:bg-blue-800 transition">
-                <graduationcap className="h-6 w-6 text-white" />
+                <GraduationCap className="h-6 w-6 text-white" />
               </div>
               <div className="flex flex-col text-left">
                 <span className="text-xl font-black text-blue-900 leading-none tracking-tight uppercase">
@@ -54,7 +53,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Menu Links (Desktop) - Waxaa lagu qariyaa mobile-ka */}
+          {/* Menu Links (Desktop) */}
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Home</Link>
             <Link href="/courses" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Courses</Link>
@@ -62,18 +61,17 @@ export default function Navbar() {
 
             {status === "authenticated" && (
               <Link href={getDashboardLink()} className="text-sm font-bold text-blue-700 flex items-center gap-1">
-                <layoutdashboard className="h-4 w-4" /> Dashboard
+                <LayoutDashboard className="h-4 w-4" /> Dashboard
               </Link>
             )}
           </div>
 
           {/* Auth Buttons & Mobile Toggle */}
           <div className="flex items-center space-x-3">
-            {/* Desktop Auth Section */}
             <div className="hidden md:flex items-center space-x-3">
                {status === "authenticated" ? (
                  <Button onClick={() => signOut({ callbackUrl: "/" })} variant="outline" className="text-red-600 border-red-100 rounded-full font-bold">
-                   <logout className="h-4 w-4 mr-2" /> Logout
+                   <LogOut className="h-4 w-4 mr-2" /> Logout
                  </Button>
                ) : (
                  <>
@@ -83,18 +81,17 @@ export default function Navbar() {
                )}
             </div>
 
-            {/* Mobile Menu Button - Kaliya Mobile ayaa lagu arkaa */}
             <button 
               className="md:hidden p-2 text-gray-600"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              {isMenuOpen ? <x className="h-7 w-7" /> : <menu className="h-7 w-7" />}
+              {isMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* MOBILE MENU - Wuxuu soo baxayaa markii button-ka la riixo */}
+      {/* MOBILE MENU */}
       {isMenuOpen && (
         <div className="md:hidden bg-white border-t py-4 px-6 space-y-4 shadow-lg animate-in fade-in slide-in-from-top-2">
           <Link href="/" onClick={closeMenu} className="block text-base font-semibold text-gray-700">Home</Link>
@@ -102,8 +99,8 @@ export default function Navbar() {
           <Link href="/Become-instructor" onClick={closeMenu} className="block text-base font-semibold text-gray-700">Become an Instructor</Link>
           
           {status === "authenticated" && (
-            <Link href={getDashboardLink()} onClick={closeMenu} className="block text-base font-bold text-blue-700 flex items-center gap-2">
-              <layoutdashboard className="h-5 w-5" /> Dashboard
+            <Link href={getDashboardLink()} onClick={closeMenu} className="flex items-center gap-2 text-base font-bold text-blue-700">
+              <LayoutDashboard className="h-5 w-5" /> Dashboard
             </Link>
           )}
 
