@@ -56,6 +56,7 @@ model Student {
   createdAt       DateTime @default(now())
 }
 
+
 // 3. Teacher Model
 model Teacher {
   id        String   @id @default(cuid())
@@ -66,6 +67,11 @@ model Teacher {
   status    String   @default("Active")
   
   classes   Class[]  // Macallinku fasallo badan ayuu dhigi karaa
+  
+  // KAN AYAA KU CUSUB: 
+  // Wuxuu kuu oggolaanayaa inaad ogaato macallin kasta inta cashar ee uu attendance ka qaaday
+  attendance Attendance[] 
+
   user      User?
   createdAt DateTime @default(now())
 }
@@ -78,27 +84,29 @@ model Class {
   capacity  Int
   
   students  Student[]
-  
-  // KAN AYAA ISBEDELAY: teachers (Jamac)
   teachers  Teacher[] 
 
   attendance Attendance[]
 }
 
-
-
-// 5. Attendance Model
+// 5. Attendance Model (Halkan ayaa ah wadnaha logigga cusub)
 model Attendance {
   id        String   @id @default(cuid())
   date      DateTime @default(now())
-  status    String   
+  status    String   // Present, Absent, Late
   
-  student   Student  @relation(fields: [studentId], references: [id])
+  // LABADAN AYAA KA MAQAN DATABASE-KAAGA:
+  subject   String   
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+
   studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
   
-  class     Class    @relation(fields: [classId], references: [id])
   classId   String
+  class     Class    @relation(fields: [classId], references: [id])
 }
+
 
 // 6. Result Model
 model Result {
