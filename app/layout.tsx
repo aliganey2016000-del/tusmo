@@ -31,8 +31,9 @@ export default function RootLayout({
           {/* Navbar-ku wuxuu ahaanayaa mid full-width ah */}
           <Navbar /> 
           
-          {/* Halkan ayaan ku xirnay container-ka si uu website-ka oo dhan responsive u noqdo */}
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Halkan waxaan ka saarnay max-w-7xl iyo padding-ka guud 
+              si Dashboard-ku uusan u noqon mid cidhiidhi ah (narrow) */}
+          <main className="w-full min-h-screen">
             {children}
           </main>
         </AuthProvider>
