@@ -5,22 +5,31 @@ import { revalidatePath } from "next/cache";
 
 /**
  * 1. KU DARISTA ARDAYGA (ADMIN ADD)
+ * Hadda wuxuu isticmaalayaa classId si uu ugu xirmo fasalka dhabta ah
  */
 export async function addStudent(formData: FormData) {
   try {
+    const classId = formData.get("classId") as string;
+
     const data = {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
-      grade: formData.get("grade") as string,
       gender: formData.get("gender") as string,
       phone: formData.get("phone") as string,
       parentName: formData.get("parentName") as string,
       parentPhone: formData.get("parentPhone") as string,
-      status: "Active", // Admin-ku markuu daro waa Active toos ah
+      status: "Active",
+      // KAN AYAA SAXAYA TIRADA FASALKA (0/40 -> 1/40):
+      classId: classId || null, 
+      grade: "", // Grade hadda muhiim maahan laakiin schema-daada ayaan u deynay
     };
 
     await db.student.create({ data });
+    
+    // Cusboonaysii labada bogba si tiradu u dhabowdo
     revalidatePath("/dashboard/admin/students");
+    revalidatePath("/dashboard/admin/classes"); 
+    
     return { success: true };
   } catch (error) {
     console.error("Error adding student:", error);
@@ -34,17 +43,26 @@ export async function addStudent(formData: FormData) {
 export async function updateStudent(formData: FormData) {
   try {
     const id = formData.get("id") as string;
+    const classId = formData.get("classId") as string;
+
     const data = {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
-      grade: formData.get("grade") as string,
       gender: formData.get("gender") as string,
       parentName: formData.get("parentName") as string,
       parentPhone: formData.get("parentPhone") as string,
+      // KAN AYAA SAXAYA TIRADA FASALKA:
+      classId: classId || null,
     };
 
-    await db.student.update({ where: { id }, data });
+    await db.student.update({ 
+      where: { id }, 
+      data 
+    });
+
     revalidatePath("/dashboard/admin/students");
+    revalidatePath("/dashboard/admin/classes");
+    
     return { success: true };
   } catch (error) {
     console.error("Error updating student:", error);
@@ -59,6 +77,7 @@ export async function deleteStudent(id: string) {
   try {
     await db.student.delete({ where: { id } });
     revalidatePath("/dashboard/admin/students");
+    revalidatePath("/dashboard/admin/classes");
     return { success: true };
   } catch (error) {
     console.error("Error deleting student:", error);
@@ -68,7 +87,6 @@ export async function deleteStudent(id: string) {
 
 /**
  * 4. ANSINTA ARDAYGA (APPROVE)
- * Waxay ka dhigaysaa Active, waxayna u oggolaanaysaa Login
  */
 export async function approveStudent(studentId: string) {
   try {
@@ -85,6 +103,7 @@ export async function approveStudent(studentId: string) {
     }
 
     revalidatePath("/dashboard/admin/students");
+    revalidatePath("/dashboard/admin/classes");
     return { success: true };
   } catch (error) {
     console.error("Error approving student:", error);
@@ -113,6 +132,7 @@ export async function rejectStudent(studentId: string, reason: string) {
     }
 
     revalidatePath("/dashboard/admin/students");
+    revalidatePath("/dashboard/admin/classes");
     return { success: true };
   } catch (error) {
     console.error("Error rejecting student:", error);
@@ -122,14 +142,12 @@ export async function rejectStudent(studentId: string, reason: string) {
 
 /**
  * 6. AUTO-REJECT (3 DAYS LOGIC)
- * Shaqadan waxay si automatic ah u diidaysaa qof kasta oo 3 bari ka badan Pending ahaa
  */
 export async function autoRejectOldStudents() {
   try {
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
-    // 1. U beddel status-ka dadka duugoobay "Rejected"
     await db.student.updateMany({
       where: {
         status: "Pending",

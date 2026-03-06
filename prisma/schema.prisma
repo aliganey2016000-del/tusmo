@@ -65,9 +65,8 @@ model Teacher {
   phone     String
   status    String   @default("Active")
   
-  classes   Class[] 
+  classes   Class[]  // Macallinku fasallo badan ayuu dhigi karaa
   user      User?
-
   createdAt DateTime @default(now())
 }
 
@@ -80,11 +79,13 @@ model Class {
   
   students  Student[]
   
-  teacher   Teacher?  @relation(fields: [teacherId], references: [id])
-  teacherId String?
+  // KAN AYAA ISBEDELAY: teachers (Jamac)
+  teachers  Teacher[] 
 
   attendance Attendance[]
 }
+
+
 
 // 5. Attendance Model
 model Attendance {

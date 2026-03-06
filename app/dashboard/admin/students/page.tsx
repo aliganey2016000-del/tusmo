@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from "react";
-import { Student } from "@prisma/client";
+import { Student, Class } from "@prisma/client";
 import {
     addStudent,
     deleteStudent,
@@ -20,10 +20,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Search, Trash2, UserPlus, Pencil, Phone, UserCircle, X, Loader2, Mail, Smartphone } from "lucide-react";
+import { Search, Trash2, UserPlus, Pencil, Phone, UserCircle, X, Loader2, Mail, Smartphone, School } from "lucide-react";
+
+// 1. QEEX TYPE CUSUB: Si looga fogaado 'any'
+type StudentWithClass = Student & {
+    class?: Class | null;
+};
 
 export default function StudentsPage() {
-    const [students, setStudents] = useState<Student[]>([]);
+    // 2. ISTICMAAL TYPE-KA CUSUB:
+    const [students, setStudents] = useState<StudentWithClass[]>([]);
+    const [classes, setClasses] = useState<Class[]>([]);
     const [loading, setLoading] = useState(true);
     const [query, setQuery] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
@@ -41,13 +48,24 @@ export default function StudentsPage() {
         }
     }, [query]);
 
+    const fetchClasses = useCallback(async () => {
+        try {
+            const response = await fetch('/api/classes');
+            const data = await response.json();
+            setClasses(data);
+        } catch (error) {
+            console.error("Error fetching classes:", error);
+        }
+    }, []);
+
     useEffect(() => {
         const initializePage = async () => {
             await autoRejectOldStudents();
             fetchStudents();
+            fetchClasses();
         };
         initializePage();
-    }, [fetchStudents]);
+    }, [fetchStudents, fetchClasses]);
 
     const handleDelete = async (id: string) => {
         if (confirm("Ma hubtaa inaad tirtirto ardaygan?")) {
@@ -56,8 +74,8 @@ export default function StudentsPage() {
         }
     };
 
-    // --- FORM COMPONENT (Si loogu isticmaalo Add iyo Edit labadaba) ---
-    const StudentFormFields = ({ student }: { student?: Student }) => (
+    // --- FORM COMPONENT ---
+    const StudentFormFields = ({ student }: { student?: StudentWithClass }) => (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-1.5 text-left">
                 <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Magaca Ardayga</Label>
@@ -67,10 +85,24 @@ export default function StudentsPage() {
                 <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Email-ka</Label>
                 <Input name="email" type="email" defaultValue={student?.email} placeholder="ali@gmail.com" required className="rounded-xl h-12 bg-slate-50 border-none" />
             </div>
+            
             <div className="space-y-1.5 text-left">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Fasalka</Label>
-                <Input name="grade" defaultValue={student?.grade} placeholder="Grade 10" required className="rounded-xl h-12 bg-slate-50 border-none" />
+                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Dooro Fasalka</Label>
+                <select 
+                    name="classId" 
+                    defaultValue={student?.classId || ""} 
+                    required 
+                    className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 font-medium outline-none focus:ring-2 focus:ring-blue-600 transition-all"
+                >
+                    <option value="">-- Dooro Fasal --</option>
+                    {classes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name} ({c.room})
+                        </option>
+                    ))}
+                </select>
             </div>
+
             <div className="space-y-1.5 text-left">
                 <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Gender</Label>
                 <select name="gender" defaultValue={student?.gender || "Male"} className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 font-medium outline-none">
@@ -95,11 +127,10 @@ export default function StudentsPage() {
 
     return (
         <div className="space-y-6">
-            {/* HEADER SECTION */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-[2rem] border shadow-sm">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">Maamulka Ardayda</h1>
-                    <p className="text-slate-500 text-sm italic">
+                    <h1 className="text-2xl font-black text-slate-800 tracking-tight text-left">Maamulka Ardayda</h1>
+                    <p className="text-slate-500 text-sm italic text-left">
                         {loading ? "Wali waa la rarayaa..." : `Wali waxaa diwaangashan ${students.length} arday.`}
                     </p>
                 </div>
@@ -129,7 +160,7 @@ export default function StudentsPage() {
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden text-left">
-                            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
+                            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b text-left">
                                 <DialogTitle className="text-2xl font-black text-slate-800 text-left">Diiwaangeli Arday Cusub</DialogTitle>
                             </DialogHeader>
                             <form
@@ -152,7 +183,6 @@ export default function StudentsPage() {
                 </div>
             </div>
 
-            {/* TABLE SECTION */}
             <div className="bg-white rounded-[2rem] border shadow-sm overflow-hidden">
                 {loading ? (
                     <div className="py-24 flex flex-col items-center gap-4">
@@ -163,14 +193,15 @@ export default function StudentsPage() {
                     <Table>
                         <TableHeader className="bg-slate-50/80 backdrop-blur-sm border-b">
                             <TableRow className="hover:bg-transparent">
-                                <TableHead className="font-black text-slate-800 py-6 pl-10 uppercase tracking-widest text-[10px]">Ardayga / Email</TableHead>
-                                <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Waalidka</TableHead>
-                                <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Taleefannada</TableHead>
-                                <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px]">Status</TableHead>
+                                <TableHead className="font-black text-slate-800 py-6 pl-10 uppercase tracking-widest text-[10px] text-left">Ardayga / Email</TableHead>
+                                <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px] text-left">Waalidka</TableHead>
+                                <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px] text-left">Taleefannada</TableHead>
+                                <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px] text-left">Status</TableHead>
                                 <TableHead className="text-right font-black text-slate-800 pr-10 uppercase tracking-widest text-[10px]">Tallaabo</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
+                            {/* 3. HADDA MAP-KU WUXUU GARANAYAA STUDENT-KA (Ma jiro 'any') */}
                             {students.map((student) => (
                                 <TableRow key={student.id} className="hover:bg-slate-50/50 transition-all border-slate-100">
                                     <TableCell className="py-6 pl-10">
@@ -187,17 +218,17 @@ export default function StudentsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-left">
-                                        <div className="flex flex-col gap-1">
+                                        <div className="flex flex-col gap-1 text-left">
                                             <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
                                                 <UserCircle size={16} className="text-slate-400" /> {student.parentName || "N/A"}
                                             </p>
-                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 rounded-lg font-black px-2 py-0.5 w-fit text-[9px]">
-                                                {student.grade.toUpperCase()}
+                                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 rounded-lg font-black px-2 py-0.5 w-fit text-[9px] flex items-center gap-1">
+                                                <School size={10} /> {student.class?.name || student.grade}
                                             </Badge>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-left">
-                                        <div className="flex flex-col gap-1.5">
+                                        <div className="flex flex-col gap-1.5 text-left">
                                             <p className="text-[11px] text-slate-600 font-bold flex items-center gap-2">
                                                 <Smartphone size={12} className="text-blue-500" /> <span className="text-slate-400 mr-1">Std:</span> {student.phone || "N/A"}
                                             </p>
@@ -207,7 +238,7 @@ export default function StudentsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-left">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 text-left">
                                             <div className={`w-2 h-2 rounded-full ${student.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
                                             <span className={`font-black text-xs uppercase tracking-widest ${student.status === 'Active' ? 'text-emerald-600' : 'text-slate-400'}`}>
                                                 {student.status}
@@ -253,7 +284,7 @@ export default function StudentsPage() {
                                                         </Button>
                                                     </DialogTrigger>
                                                     <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden text-left">
-                                                        <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
+                                                        <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b text-left">
                                                             <DialogTitle className="text-2xl font-black text-slate-800 text-left">Cusboonaysii Xogta</DialogTitle>
                                                         </DialogHeader>
                                                         <form
