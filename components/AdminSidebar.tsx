@@ -3,11 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  LayoutDashboard, Users, GraduationCap, School, Calendar, Settings, LogOut, CreditCard, X 
+  LayoutDashboard, 
+  Users, 
+  GraduationCap, 
+  School, 
+  Calendar, 
+  Settings, 
+  LogOut, 
+  CreditCard, 
+  X,
+  Mail,      // Icon-ka Inbox
+  UserCheck  // Icon-ka Instructor Requests
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
-// Waxaan ku darnay props si aan u xakameyno sidebar-ka mobilka
 export default function AdminSidebar({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const pathname = usePathname();
 
@@ -15,6 +24,12 @@ export default function AdminSidebar({ isOpen, onClose }: { isOpen: boolean, onC
     { name: "Overview", icon: <LayoutDashboard size={20} />, href: "/dashboard/admin" },
     { name: "Students", icon: <Users size={20} />, href: "/dashboard/admin/students" },
     { name: "Teachers", icon: <GraduationCap size={20} />, href: "/dashboard/admin/teachers" },
+    
+    // --- LABADAAN AYAA CUSUB ---
+    { name: "Instructor Requests", icon: <UserCheck size={20} />, href: "/dashboard/admin/instructor-requests" },
+    { name: "Inbox", icon: <Mail size={20} />, href: "/dashboard/admin/inbox" },
+    // --------------------------
+
     { name: "Classes", icon: <School size={20} />, href: "/dashboard/admin/classes" },
     { name: "Attendance", icon: <Calendar size={20} />, href: "/dashboard/admin/attendance" },
     { name: "Fees/Finance", icon: <CreditCard size={20} />, href: "/dashboard/admin/finance" },
@@ -23,7 +38,7 @@ export default function AdminSidebar({ isOpen, onClose }: { isOpen: boolean, onC
 
   return (
     <>
-      {/* Overlay: Wuxuu xirayaa sidebar-ka markii meel banaan la taabto mobile-ka */}
+      {/* Overlay: Mobile only */}
       {isOpen && (
         <div 
           onClick={onClose}
@@ -51,7 +66,7 @@ export default function AdminSidebar({ isOpen, onClose }: { isOpen: boolean, onC
         </div>
 
         {/* MENU */}
-        <nav className="flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4 px-3">Main Menu</p>
           {menuItems.map((item) => {
             const isActive = pathname === item.href;

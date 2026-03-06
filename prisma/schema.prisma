@@ -110,14 +110,42 @@ model Result {
   studentId String
 }
 
-// 7. Teacher Application Model
-model TeacherApplication {
-  id         String   @id @default(cuid())
-  fullName   String
-  email      String
-  phone      String?
-  subject    String
-  experience String?
-  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt  DateTime @default(now())
+
+
+// 7. Model-ka Fariimaha (Contact Us Messages)
+// Waxaan u habeeyay sidii foomka sawirka ku jira (Magaca, Email, Ujeedada, Fariinta)
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String        // Magacaaga
+  email     String        // Email-kaaga
+  subject   String        // Ujeedada
+  message   String        @db.Text // Fariintaada
+  status    MessageStatus @default(UNREAD) // In la akhriyay iyo in kale
+  createdAt DateTime      @default(now())
+}
+
+enum MessageStatus {
+  UNREAD    // Cusub (Lama akhrin)
+  READ      // La akhriyay
+  REPLIED   // Laga jawaabay
+}
+
+// 8. Model-ka Codsiyada Macallimiinta (Instructor Applications)
+// Waxaa loo isticmaalayaa bogga "Become an Instructor"
+model InstructorApplication {
+  id          String            @id @default(cuid())
+  fullName    String            // Magaca oo buuxa
+  email       String            @unique
+  phone       String?
+  specialty   String            // Maadada uu ku takhasusay (Subject)
+  experience  String?           // Khibraddiisa (Years of experience)
+  bio         String?           @db.Text // Sharaxaad kooban oo isaga ku saabsan
+  status      ApplicationStatus @default(PENDING)
+  createdAt   DateTime          @default(now())
+}
+
+enum ApplicationStatus {
+  PENDING   // Sugitaan
+  APPROVED  // La aqbalay
+  REJECTED  // La diiday
 }

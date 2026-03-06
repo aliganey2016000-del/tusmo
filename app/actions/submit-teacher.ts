@@ -1,22 +1,32 @@
-"use server";
+'use server';
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { revalidatePath } from "next/cache";
 
-const prisma = new PrismaClient();
-
-export async function submitTeacherApplication(formData: FormData) {
+export async function submitInstructorApplication(formData: FormData) {
   try {
-    await prisma.teacherApplication.create({
+    const fullName = formData.get("fullName") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const specialty = formData.get("specialty") as string;
+
+    // ✅ BEDEL KAN: Waa inuu ahaadaa instructorApplication (sidii schema-daada)
+    await prisma.instructorApplication.create({
       data: {
-        fullName: formData.get("full_name") as string,
-        email: formData.get("email") as string,
-        phone: formData.get("phone") as string || "",
-        subject: formData.get("subject") as string,
-        experience: formData.get("experience") as string,
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        specialty: specialty,
+        // Haddii aad experience iyo bio ku dartay foomka, halkan ku dar:
+        experience: (formData.get("experience") as string) || "",
+        bio: (formData.get("bio") as string) || "",
       },
     });
-    return { success: true, message: "Codsigaaga si guul leh ayaa loo diray!" };
-  } catch { // Waxaad ka saartay (_)
-    return { success: false, message: "Khalad ayaa dhacay, fadlan mar kale isku day." };
+
+    revalidatePath("/admin/instructor-requests");
+    return { success: true };
+  } catch (error) {
+    console.error("Error submitting application:", error);
+    return { success: false, error: "Codsiga lama diri karin." };
   }
 }
