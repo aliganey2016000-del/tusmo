@@ -8,7 +8,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// 1. User Model (Authentication-ka)
+// 1. User Model
 model User {
   id         String   @id @default(cuid())
   firstName  String
@@ -19,7 +19,6 @@ model User {
   role       Role     @default(STUDENT)
   isApproved Boolean  @default(false)
   
-  // Xiriirka uu la leeyahay Student ama Teacher
   student    Student? @relation(fields: [studentId], references: [id])
   studentId  String?  @unique
   teacher    Teacher? @relation(fields: [teacherId], references: [id])
@@ -45,7 +44,7 @@ model Student {
   parentName      String?
   parentPhone     String?
   status          String   @default("Active")
-  rejectionReason String?  // TANI AYAA CUSUB: Waxay keydinaysaa sababta diidmada
+  rejectionReason String?  
   
   class           Class?   @relation(fields: [classId], references: [id])
   classId         String?
@@ -54,8 +53,12 @@ model Student {
   attendance      Attendance[]
   results         Result[]
   createdAt       DateTime @default(now())
-}
 
+  // INDEXES: Si raadinta magaca iyo fasalku u dakhsooto
+  @@index([name])
+  @@index([classId])
+  @@index([status])
+}
 
 // 3. Teacher Model
 model Teacher {
@@ -66,14 +69,13 @@ model Teacher {
   phone     String
   status    String   @default("Active")
   
-  classes   Class[]  // Macallinku fasallo badan ayuu dhigi karaa
-  
-  // KAN AYAA KU CUSUB: 
-  // Wuxuu kuu oggolaanayaa inaad ogaato macallin kasta inta cashar ee uu attendance ka qaaday
+  classes   Class[]  
   attendance Attendance[] 
 
   user      User?
   createdAt DateTime @default(now())
+
+  @@index([name])
 }
 
 // 4. Class Model
@@ -87,26 +89,34 @@ model Class {
   teachers  Teacher[] 
 
   attendance Attendance[]
+
+  @@index([name])
 }
 
-// 5. Attendance Model (Halkan ayaa ah wadnaha logigga cusub)
+// 5. Attendance Model
 model Attendance {
   id        String   @id @default(cuid())
   date      DateTime @default(now())
-  status    String   // Present, Absent, Late
-  
-  // LABADAN AYAA KA MAQAN DATABASE-KAAGA:
+  status    String   
   subject   String   
-  teacherId String
-  teacher   Teacher  @relation(fields: [teacherId], references: [id])
-
-  studentId String
-  student   Student  @relation(fields: [studentId], references: [id])
   
-  classId   String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  teacherId String
+
+  student   Student  @relation(fields: [studentId], references: [id])
+  studentId String
+  
   class     Class    @relation(fields: [classId], references: [id])
+  classId   String
+
+  // INDEXES: Warbixinaha (Reports) waxay ku xirnaan doonaan taariikhda iyo fasalka
+  @@index([date])
+  @@index([classId])
+  @@index([studentId])
 }
 
+// ... Qaybaha kale waa sidoodii ...
+// (Result, ContactMessage, InstructorApplication)
 
 // 6. Result Model
 model Result {
