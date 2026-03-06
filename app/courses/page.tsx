@@ -41,7 +41,7 @@ const courses = [
     color: "bg-purple-50",
   },
   {
-    title: "Physics", // CUSUB
+    title: "Physics",
     level: "Secondary School",
     desc: "Barashada miisaanka, iftiinka, korontada iyo awoodda (Force).",
     icon: <Zap className="text-yellow-600" />,
@@ -49,7 +49,7 @@ const courses = [
     color: "bg-yellow-50",
   },
   {
-    title: "Arabic Language", // CUSUB
+    title: "Arabic Language",
     level: "Primary & Secondary",
     desc: "Barashada naxwaha, sarfka iyo qoraalka luuqadda Carabiga.",
     icon: <ArabicIcon className="text-green-600" />,
@@ -57,7 +57,7 @@ const courses = [
     color: "bg-green-50",
   },
   {
-    title: "Technology (ICT)", // CUSUB
+    title: "Technology (ICT)",
     level: "Primary & Secondary",
     desc: "Barashada Computer-ka, Software-ka iyo dunida casriga ah.",
     icon: <Monitor className="text-slate-600" />,
@@ -65,7 +65,7 @@ const courses = [
     color: "bg-slate-50",
   },
   {
-    title: "Business Studies", // CUSUB
+    title: "Business Studies",
     level: "Secondary School",
     desc: "Barashada ganacsiga, xisaabaadka (Accounting) iyo maamulka.",
     icon: <Briefcase className="text-rose-600" />,
@@ -120,7 +120,7 @@ export default function CoursesPage() {
             Maaddooyinka aan bixino
           </h1>
           <p className="mt-4 text-gray-600 max-w-2xl mx-auto italic">
-            "Barashadu waa furaha guusha mustaqbalka."
+            &ldquo;Barashadu waa furaha guusha mustaqbalka.&rdquo;
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export default function CoursesPage() {
                 </Badge>
               </CardHeader>
               <CardContent className="pt-6">
-                <CardDescription className="text-gray-600 text-sm leading-relaxed mb-4 min-h-[60px]">
+                <CardDescription className="text-gray-600 text-sm leading-relaxed mb-4 min-h-15">
                   {course.desc}
                 </CardDescription>
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-center">

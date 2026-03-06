@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar"; 
-import AuthProvider from "@/components/AuthProvider"; // 1. Soo geli AuthProvider
+import AuthProvider from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,10 +27,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {/* 2. Ku dhex ridi AuthProvider dhamaan content-ka */}
         <AuthProvider>
+          {/* Navbar-ku wuxuu ahaanayaa mid full-width ah */}
           <Navbar /> 
-          <main>
+          
+          {/* Halkan ayaan ku xirnay container-ka si uu website-ka oo dhan responsive u noqdo */}
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </main>
         </AuthProvider>

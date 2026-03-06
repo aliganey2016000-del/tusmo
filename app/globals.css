@@ -118,9 +118,30 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 box-border;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased text-sm md:text-base;
   }
+
+  img, video {
+    @apply max-w-full h-auto;
+  }
+
+  /* Habaynta scroll-ka */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50;
+  }
+
+  /* Habaynta cinwaannada */
+  h1 { @apply text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl; }
+  h2 { @apply text-2xl font-bold tracking-tight md:text-3xl; }
+  h3 { @apply text-xl font-bold tracking-tight md:text-2xl; }
 }
