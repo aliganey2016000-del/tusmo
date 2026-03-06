@@ -109,3 +109,15 @@ model Result {
   student   Student  @relation(fields: [studentId], references: [id])
   studentId String
 }
+
+// 7. Teacher Application Model
+model TeacherApplication {
+  id         String   @id @default(cuid())
+  fullName   String
+  email      String
+  phone      String?
+  subject    String
+  experience String?
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt  DateTime @default(now())
+}

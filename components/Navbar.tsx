@@ -57,7 +57,7 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-6">
             <Link href="/" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Home</Link>
             <Link href="/courses" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Courses</Link>
-            <Link href="/Become-instructor" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Become an Instructor</Link>
+            <Link href="/become-instructor" className="text-sm font-semibold text-gray-600 hover:text-blue-700">Become an Instructor</Link>
 
             {status === "authenticated" && (
               <Link href={getDashboardLink()} className="text-sm font-bold text-blue-700 flex items-center gap-1">
@@ -96,7 +96,7 @@ export default function Navbar() {
         <div className="md:hidden bg-white border-t py-4 px-6 space-y-4 shadow-lg animate-in fade-in slide-in-from-top-2">
           <Link href="/" onClick={closeMenu} className="block text-base font-semibold text-gray-700">Home</Link>
           <Link href="/courses" onClick={closeMenu} className="block text-base font-semibold text-gray-700">Courses</Link>
-          <Link href="/Become-instructor" onClick={closeMenu} className="block text-base font-semibold text-gray-700">Become an Instructor</Link>
+          <Link href="/become-instructor" onClick={closeMenu} className="block text-base font-semibold text-gray-700">Become an Instructor</Link>
           
           {status === "authenticated" && (
             <Link href={getDashboardLink()} onClick={closeMenu} className="flex items-center gap-2 text-base font-bold text-blue-700">
