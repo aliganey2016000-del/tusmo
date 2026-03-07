@@ -8,7 +8,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// 1. User Model
+// ==========================================
+// 1. Habaynta Isticmaalayaasha (User Model)
+// ==========================================
 model User {
   id         String   @id @default(cuid())
   firstName  String
@@ -33,7 +35,9 @@ enum Role {
   STUDENT
 }
 
-// 2. Student Model
+// ==========================================
+// 2. Habaynta Ardayda (Student Model)
+// ==========================================
 model Student {
   id              String   @id @default(cuid())
   name            String
@@ -54,18 +58,19 @@ model Student {
   results         Result[]
   createdAt       DateTime @default(now())
 
-  // INDEXES: Si raadinta magaca iyo fasalku u dakhsooto
   @@index([name])
   @@index([classId])
   @@index([status])
 }
 
-// 3. Teacher Model
+// ==========================================
+// 3. Habaynta Macallimiinta (Teacher Model)
+// ==========================================
 model Teacher {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
-  subject   String
+  subject   String   // Waxay kaydinaysaa maadooyinka (JSON String ahaan)
   phone     String
   status    String   @default("Active")
   
@@ -78,22 +83,48 @@ model Teacher {
   @@index([name])
 }
 
-// 4. Class Model
+// ==========================================
+// 4. Habaynta Fasallada (Class Model)
+// ==========================================
+enum EducationLevel {
+  Primary
+  Middle
+  Secondary
+}
+
+enum Shift {
+  Morning
+  Afternoon
+  Evening
+}
+
 model Class {
-  id        String    @id @default(cuid())
-  name      String    
+  id        String         @id @default(cuid())
+  name      String         
   room      String
-  capacity  Int
+  capacity  Int            
   
-  students  Student[]
-  teachers  Teacher[] 
+  // Waxaan ku darnay @default si database-ku u oggolaado xogta hore u jirtay
+  level     EducationLevel @default(Primary)
+  shift     Shift          @default(Morning)
+
+  students  Student[]      
+  teachers  Teacher[]      
 
   attendance Attendance[]
 
+  createdAt DateTime @default(now())
+  // updatedAt isagana sii qiimo bilow ah si looga fogaado khaladka push-ka
+  updatedAt DateTime @default(now()) @updatedAt
+
   @@index([name])
+  @@index([level])
+  @@index([shift])
 }
 
-// 5. Attendance Model
+// ==========================================
+// 5. Habaynta Xaadiriska (Attendance Model)
+// ==========================================
 model Attendance {
   id        String   @id @default(cuid())
   date      DateTime @default(now())
@@ -109,16 +140,14 @@ model Attendance {
   class     Class    @relation(fields: [classId], references: [id])
   classId   String
 
-  // INDEXES: Warbixinaha (Reports) waxay ku xirnaan doonaan taariikhda iyo fasalka
   @@index([date])
   @@index([classId])
   @@index([studentId])
 }
 
-// ... Qaybaha kale waa sidoodii ...
-// (Result, ContactMessage, InstructorApplication)
-
-// 6. Result Model
+// ==========================================
+// 6. Habaynta Natiijooyinka (Result Model)
+// ==========================================
 model Result {
   id        String   @id @default(cuid())
   subject   String
@@ -129,42 +158,42 @@ model Result {
   studentId String
 }
 
-
-
-// 7. Model-ka Fariimaha (Contact Us Messages)
-// Waxaan u habeeyay sidii foomka sawirka ku jira (Magaca, Email, Ujeedada, Fariinta)
+// ==========================================
+// 7. Fariimaha (Contact Messages)
+// ==========================================
 model ContactMessage {
   id        String        @id @default(cuid())
-  name      String        // Magacaaga
-  email     String        // Email-kaaga
-  subject   String        // Ujeedada
-  message   String        @db.Text // Fariintaada
-  status    MessageStatus @default(UNREAD) // In la akhriyay iyo in kale
+  name      String        
+  email     String        
+  subject   String        
+  message   String        @db.Text 
+  status    MessageStatus @default(UNREAD) 
   createdAt DateTime      @default(now())
 }
 
 enum MessageStatus {
-  UNREAD    // Cusub (Lama akhrin)
-  READ      // La akhriyay
-  REPLIED   // Laga jawaabay
+  UNREAD    
+  READ      
+  REPLIED   
 }
 
-// 8. Model-ka Codsiyada Macallimiinta (Instructor Applications)
-// Waxaa loo isticmaalayaa bogga "Become an Instructor"
+// ==========================================
+// 8. Codsiyada Macallimiinta (Applications)
+// ==========================================
 model InstructorApplication {
   id          String            @id @default(cuid())
-  fullName    String            // Magaca oo buuxa
+  fullName    String            
   email       String            @unique
   phone       String?
-  specialty   String            // Maadada uu ku takhasusay (Subject)
-  experience  String?           // Khibraddiisa (Years of experience)
-  bio         String?           @db.Text // Sharaxaad kooban oo isaga ku saabsan
+  specialty   String            
+  experience  String?           
+  bio         String?           @db.Text 
   status      ApplicationStatus @default(PENDING)
   createdAt   DateTime          @default(now())
 }
 
 enum ApplicationStatus {
-  PENDING   // Sugitaan
-  APPROVED  // La aqbalay
-  REJECTED  // La diiday
+  PENDING   
+  APPROVED  
+  REJECTED  
 }
