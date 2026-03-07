@@ -49,6 +49,7 @@ export async function updateStudent(formData: FormData) {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       gender: formData.get("gender") as string,
+      phone: formData.get("phone") as string, // <--- KAN AYAA LAGU DARAY SI UU U SHAQEEYO EDIT-KA
       parentName: formData.get("parentName") as string,
       parentPhone: formData.get("parentPhone") as string,
       // KAN AYAA SAXAYA TIRADA FASALKA:
@@ -163,6 +164,24 @@ export async function autoRejectOldStudents() {
     return { success: true };
   } catch (error) {
     console.error("Auto-reject error:", error);
+    return { success: false };
+  }
+}
+
+export async function toggleStudentStatus(id: string, currentStatus: string) {
+  try {
+    const newStatus = currentStatus === "Active" ? "Inactive" : "Active";
+    
+    await db.student.update({
+      where: { id },
+      data: { status: newStatus },
+    });
+
+    revalidatePath("/dashboard/admin/students");
+    revalidatePath("/dashboard/admin/classes");
+    return { success: true };
+  } catch (error) {
+    console.error("Error toggling status:", error);
     return { success: false };
   }
 }
