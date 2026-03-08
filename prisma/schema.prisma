@@ -50,7 +50,8 @@ model Student {
   status          String   @default("Active")
   rejectionReason String?  
   
-  class           Class?   @relation(fields: [classId], references: [id])
+  // CASCADE: Haddii fasalka la tirtiro, ardayda xiriirkooda waa la tirtirayaa ama waa la gooynayaa
+  class           Class?   @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId         String?
   
   user            User?
@@ -70,7 +71,7 @@ model Teacher {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
-  subject   String   // Waxay kaydinaysaa maadooyinka (JSON String ahaan)
+  subject   String   
   phone     String
   status    String   @default("Active")
   
@@ -103,20 +104,17 @@ model Class {
   name      String         
   room      String
   capacity  Int            
-  
-  // Waxaan ku darnay @default si database-ku u oggolaado xogta hore u jirtay
   level     EducationLevel @default(Primary)
   shift     Shift          @default(Morning)
 
   students  Student[]      
   teachers  Teacher[]      
-
   attendance Attendance[]
 
   createdAt DateTime @default(now())
-  // updatedAt isagana sii qiimo bilow ah si looga fogaado khaladka push-ka
   updatedAt DateTime @default(now()) @updatedAt
 
+  // INDEXING: Si raadinta Heerarka iyo Xilliyada ay u noqoto mid aad u degdeg badan
   @@index([name])
   @@index([level])
   @@index([shift])
@@ -134,10 +132,11 @@ model Attendance {
   teacher   Teacher  @relation(fields: [teacherId], references: [id])
   teacherId String
 
-  student   Student  @relation(fields: [studentId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String
   
-  class     Class    @relation(fields: [classId], references: [id])
+  // CASCADE: Xalkan wuxuu xallinayaa Error-ka database-ka marka la tirtirayo fasalka
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
   classId   String
 
   @@index([date])
@@ -154,12 +153,12 @@ model Result {
   score     Float
   grade     String   
   
-  student   Student  @relation(fields: [studentId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId String
 }
 
 // ==========================================
-// 7. Fariimaha (Contact Messages)
+// 7. Fariimaha & Codsiyada (Aan isbeddel lagu samayn)
 // ==========================================
 model ContactMessage {
   id        String        @id @default(cuid())
@@ -177,9 +176,6 @@ enum MessageStatus {
   REPLIED   
 }
 
-// ==========================================
-// 8. Codsiyada Macallimiinta (Applications)
-// ==========================================
 model InstructorApplication {
   id          String            @id @default(cuid())
   fullName    String            

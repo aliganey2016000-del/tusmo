@@ -1,327 +1,250 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Student, Class } from "@prisma/client";
 import {
-    addStudent,
-    deleteStudent,
-    updateStudent,
-    approveStudent,
-    rejectStudent,
-    autoRejectOldStudents,
-    toggleStudentStatus
+  addStudent,
+  deleteStudent,
+  updateStudent,
+  toggleStudentStatus
 } from "@/app/actions/studentActions";
-import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
-    Search, Trash2, Pencil, Phone, 
-    UserCircle, Loader2, Mail, 
-    Smartphone, School, UserX, UserCheck, Plus 
+  Search, Trash2, Pencil, Loader2, 
+  Plus, BookOpen, Users, ChevronDown, Check, Activity
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-type StudentWithClass = Student & {
-    class?: Class | null;
-};
+interface StudentWithClass extends Student {
+  class?: Class | null;
+}
+
+interface MultiSelectProps {
+  label: string;
+  options: string[];
+  selected: string[];
+  onToggle: (val: string) => void;
+  icon: React.ElementType;
+}
 
 export default function StudentsPage() {
-    const [students, setStudents] = useState<StudentWithClass[]>([]);
-    const [classes, setClasses] = useState<Class[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [query, setQuery] = useState("");
-    const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(["Active"]);
+  const [query, setQuery] = useState("");
+  const [students, setStudents] = useState<StudentWithClass[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
-    // 1. Logic-ga raadinta (Debounced Search)
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchStudents(query);
-        }, 500); 
-        return () => clearTimeout(timer);
-    }, [query]);
+  const levels = ["Primary", "Middle", "Secondary"];
+  const statuses = ["Active", "Inactive", "Pending"];
 
-    const fetchStudents = async (searchQuery: string) => {
-        setLoading(true);
-        try {
-            const response = await fetch(`/api/students?query=${searchQuery}`);
-            if (response.ok) {
-                const data = await response.json();
-                setStudents(data);
-            }
-        } catch (error) {
-            console.error("Error fetching students:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchStudents = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    setHasSearched(true);
+    try {
+      const params = new URLSearchParams();
+      if (selectedLevels.length > 0) params.append("levels", selectedLevels.join(","));
+      if (selectedStatuses.length > 0) params.append("statuses", selectedStatuses.join(","));
+      if (query) params.append("query", query);
 
-    const fetchClasses = useCallback(async () => {
-        try {
-            const response = await fetch('/api/classes');
-            if (response.ok) {
-                const data = await response.json();
-                setClasses(data);
-            }
-        } catch (error) {
-            console.error("Error fetching classes:", error);
-        }
-    }, []);
+      const res = await fetch(`/api/students?${params.toString()}`, { signal });
+      if (res.ok) setStudents(await res.json());
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedLevels, selectedStatuses, query]);
 
-    // 2. Initial load oo sequential ah
-    useEffect(() => {
-        const initializePage = async () => {
-            await autoRejectOldStudents(); 
-            await fetchClasses();         
-            await fetchStudents("");      
-        };
-        initializePage();
-    }, [fetchClasses]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/classes', { signal: controller.signal })
+      .then(res => res.json())
+      .then(setClasses)
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
-    const handleDelete = async (id: string) => {
-        if (confirm("Ma hubtaa inaad tirtirto ardaygan?")) {
-            await deleteStudent(id);
-            fetchStudents(query);
-        }
-    };
+  const handleDelete = async (id: string) => {
+    if (confirm("Ma hubtaa?")) {
+      try {
+        await deleteStudent(id);
+        fetchStudents();
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "Cillad");
+      }
+    }
+  };
 
-    const StudentFormFields = ({ student }: { student?: StudentWithClass }) => (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-left font-bold">
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Magaca Ardayga</Label>
-                <Input name="name" defaultValue={student?.name} placeholder="Cali Axmed" required className="rounded-xl h-12 bg-slate-50 border-none w-full" />
-            </div>
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Email-ka</Label>
-                <Input name="email" type="email" defaultValue={student?.email} placeholder="ali@gmail.com" required className="rounded-xl h-12 bg-slate-50 border-none w-full" />
-            </div>
-            
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Dooro Fasalka</Label>
-                <select 
-                    name="classId" 
-                    defaultValue={student?.classId || ""} 
-                    required 
-                    className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 outline-none focus:ring-2 focus:ring-blue-600"
-                >
-                    <option value="">-- Dooro Fasal --</option>
-                    {classes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                            {c.name} ({c.room})
-                        </option>
-                    ))}
-                </select>
-            </div>
+  const handleToggleStatus = async (id: string, status: string) => {
+    try {
+      await toggleStudentStatus(id, status);
+      fetchStudents();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Cillad");
+    }
+  };
 
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Gender</Label>
-                <select name="gender" defaultValue={student?.gender || "Male"} className="w-full border-none rounded-xl p-3 text-sm bg-slate-50 h-12 outline-none">
-                    <option value="Male">Lab (Male)</option>
-                    <option value="Female">Dhedig (Female)</option>
-                </select>
-            </div>
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Taleefanka Ardayga</Label>
-                <Input name="phone" defaultValue={student?.phone || ""} placeholder="61XXXXXXX" className="rounded-xl h-12 bg-slate-50 border-none w-full" />
-            </div>
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Magaca Waalidka</Label>
-                <Input name="parentName" defaultValue={student?.parentName || ""} placeholder="Magaca waalidka" className="rounded-xl h-12 bg-slate-50 border-none w-full" />
-            </div>
-            <div className="space-y-1.5">
-                <Label className="pl-1 font-bold text-slate-700 text-xs uppercase">Taleefanka Waalidka</Label>
-                <Input name="parentPhone" defaultValue={student?.parentPhone || ""} placeholder="61XXXXXXX" className="rounded-xl h-12 bg-slate-50 border-none w-full" />
-            </div>
+  const toggleFilter = (item: string, state: string[], setState: (v: string[]) => void) => {
+    setState(state.includes(item) ? state.filter(i => i !== item) : [...state, item]);
+  };
+
+  const StudentFormFields = ({ student }: { student?: StudentWithClass }) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-black text-left">
+      <div className="space-y-1.5">
+        <Label className="text-[10px] uppercase tracking-widest text-slate-400 ml-1">Magaca</Label>
+        <Input name="name" defaultValue={student?.name} required className="rounded-xl h-12 bg-slate-50 border-none font-black" />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[10px] uppercase tracking-widest text-slate-400 ml-1">Email</Label>
+        <Input name="email" type="email" defaultValue={student?.email} required className="rounded-xl h-12 bg-slate-50 border-none font-black" />
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[10px] uppercase tracking-widest text-slate-400 ml-1">Fasalka</Label>
+        <select name="classId" defaultValue={student?.classId || ""} required className="w-full h-12 rounded-xl bg-slate-50 px-3 text-sm font-black outline-none">
+          <option value="">-- Dooro --</option>
+          {classes.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
+        </select>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-[10px] uppercase tracking-widest text-slate-400 ml-1">Jinsiga</Label>
+        <select name="gender" defaultValue={student?.gender || "Male"} className="w-full h-12 rounded-xl bg-slate-50 px-3 text-sm font-black outline-none">
+          <option value="Male">Lab</option>
+          <option value="Female">Dhedig</option>
+        </select>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500 font-black uppercase">
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="text-left">
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">Maamulka Ardayda</h1>
+          <p className="text-slate-400 text-[10px] tracking-widest mt-1">Enterprise Database</p>
         </div>
-    );
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-blue-600 hover:bg-blue-700 rounded-full h-12 px-8 font-black text-white shadow-lg active:scale-95 transition-all"><Plus size={18} /> Ku dar Arday</Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-[2.5rem] max-w-2xl border-none shadow-2xl font-black text-left">
+            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b"><DialogTitle className="text-2xl font-black text-slate-800 uppercase tracking-tight">Diiwaangeli</DialogTitle></DialogHeader>
+            <form onSubmit={async (e) => { 
+              e.preventDefault(); setIsSubmitting(true);
+              try { await addStudent(new FormData(e.currentTarget)); setIsAddOpen(false); fetchStudents(); } 
+              finally { setIsSubmitting(false); }
+            }} className="space-y-6 pt-4 font-black">
+              <StudentFormFields />
+              <Button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 h-14 rounded-2xl font-black text-white shadow-xl shadow-blue-100">{isSubmitting ? <Loader2 className="animate-spin" /> : "Keydi"}</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
-    return (
-        <div className="space-y-6 w-full max-w-full overflow-hidden text-left font-bold">
-            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 bg-white p-6 rounded-[2rem] border shadow-sm">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-800 tracking-tight text-left">Maamulka Ardayda</h1>
-                    <p className="text-slate-500 text-sm italic mt-1 font-medium text-left">
-                        {loading ? "Xogta waa la diyaarinayaa..." : `Waxaa kuu diwaangashan ${students.length} arday.`}
-                    </p>
-                </div>
+      {/* FILTERS */}
+      <div className="bg-white/90 backdrop-blur-md p-5 rounded-[2.2rem] border border-slate-100 shadow-xl flex flex-wrap items-center gap-4 sticky top-4 z-40">
+        <MultiSelectDropdown label="Heerarka" options={levels} selected={selectedLevels} onToggle={(v) => toggleFilter(v, selectedLevels, setSelectedLevels)} icon={BookOpen} />
+        <MultiSelectDropdown label="Xaaladda" options={statuses} selected={selectedStatuses} onToggle={(v) => toggleFilter(v, selectedStatuses, setSelectedStatuses)} icon={Activity} />
+        <div className="flex-1 min-w-[200px] relative">
+          <Search className="absolute left-4 top-3.5 text-slate-400" size={16} />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Raadi..." className="pl-11 rounded-2xl h-12 bg-slate-50 border-none font-black text-xs" />
+        </div>
+        <Button onClick={() => fetchStudents()} disabled={loading} className="h-12 px-10 rounded-2xl bg-slate-900 text-white font-black flex gap-2 shadow-lg">{loading ? <Loader2 className="animate-spin" /> : <Search size={18} />}<span>Sifeey</span></Button>
+      </div>
 
-                <div className="flex flex-col md:flex-row items-center gap-3 w-full xl:w-auto">
-                    <div className="relative w-full md:w-72">
-                        <Search className="absolute left-4 top-3.5 text-slate-400" size={18} />
-                        <Input
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Raadi arday..."
-                            className="pl-11 rounded-full bg-slate-50 border-none h-12 w-full focus-visible:ring-blue-600 font-bold"
-                        />
-                    </div>
-
-                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="w-full md:w-auto bg-blue-700 hover:bg-blue-800 rounded-full flex justify-center items-center gap-2 h-12 px-8 font-black shadow-lg shadow-blue-100">
-                                <Plus size={18} /> Ku dar Arday
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="rounded-[2rem] max-w-2xl w-[95vw] md:w-full border-none shadow-2xl">
-                            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b text-left">
-                                <DialogTitle className="text-2xl font-black text-slate-800">Diiwaangeli Arday Cusub</DialogTitle>
+      {/* TABLE */}
+      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[400px]">
+        {!hasSearched ? (
+          <div className="py-32 text-center space-y-6 font-black"><div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto animate-bounce"><Users size={40} className="text-slate-200" /></div><p className="text-slate-400 text-[10px] uppercase">Dooro miiraha si aad u bilowdo</p></div>
+        ) : loading ? (
+          <div className="p-10 space-y-4">{[1,2,3].map(i => <div key={i} className="h-16 w-full bg-slate-50 animate-pulse rounded-2xl" />)}</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-black">
+              <thead className="bg-slate-50/50">
+                <tr className="border-b border-slate-100">
+                  <th className="p-6 text-[10px] text-slate-400 uppercase tracking-widest font-black">Ardayga</th>
+                  <th className="p-6 text-[10px] text-slate-400 uppercase tracking-widest text-center font-black">Fasalka</th>
+                  <th className="p-6 text-[10px] text-slate-400 uppercase tracking-widest text-center font-black">Status</th>
+                  <th className="p-6 text-[10px] text-slate-400 uppercase tracking-widest text-right font-black">Ficil</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {students.map((student) => (
+                  <tr key={student.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="p-6 font-black">
+                      <div className="flex items-center gap-4 text-left">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg font-black uppercase">{student.name.charAt(0)}</div>
+                        <div className="flex flex-col text-left"><span className="text-sm text-slate-800 font-black">{student.name}</span><span className="text-[9px] text-slate-400 lowercase">{student.email}</span></div>
+                      </div>
+                    </td>
+                    <td className="p-6 text-center">
+                      <Badge className="bg-blue-50 text-blue-700 border-none text-[10px] font-black uppercase">{student.class?.name || "N/A"}</Badge>
+                    </td>
+                    <td className="p-6 text-center font-black">
+                      <Badge className={`border-none font-black text-[9px] px-3 py-1 uppercase ${student.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>{student.status}</Badge>
+                    </td>
+                    <td className="p-6 text-right">
+                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <Button onClick={() => handleToggleStatus(student.id, student.status)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-amber-50 text-slate-400 hover:text-amber-600"><Activity size={18} /></Button>
+                        <Dialog>
+                          <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-blue-50 text-slate-400 hover:text-blue-600 font-black"><Pencil size={18} /></Button></DialogTrigger>
+                          <DialogContent className="rounded-[2.5rem] max-w-2xl border-none shadow-2xl font-black text-left">
+                            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b">
+                              <DialogTitle className="text-2xl font-black text-slate-800 uppercase tracking-tight">Cusboonaysii</DialogTitle>
                             </DialogHeader>
-                            <form
-                                onSubmit={async (e) => {
-                                    e.preventDefault();
-                                    await addStudent(new FormData(e.currentTarget));
-                                    setIsAddOpen(false);
-                                    fetchStudents(query);
-                                }}
-                                className="space-y-4 pt-2 text-left"
-                            >
-                                <StudentFormFields />
-                                <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-14 rounded-xl font-black text-lg mt-4">
-                                    Keydi Ardayga
-                                </Button>
+                            <form onSubmit={async (e) => { 
+                                e.preventDefault(); setIsSubmitting(true);
+                                try { await updateStudent(new FormData(e.currentTarget)); fetchStudents(); } 
+                                finally { setIsSubmitting(false); }
+                              }} className="space-y-6 pt-4 font-black">
+                              <input type="hidden" name="id" value={student.id} />
+                              <StudentFormFields student={student} />
+                              <Button disabled={isSubmitting} type="submit" className="w-full bg-blue-600 h-14 rounded-2xl font-black text-white">Badal</Button>
                             </form>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+                          </DialogContent>
+                        </Dialog>
+                        <Button onClick={() => handleDelete(student.id)} variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600"><Trash2 size={18} /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MultiSelectDropdown({ label, options, selected, onToggle, icon: Icon }: MultiSelectProps) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" className="h-12 w-full md:w-60 justify-between rounded-2xl border-slate-100 bg-slate-50 font-black text-[11px] uppercase tracking-widest px-6 shadow-sm">
+          <div className="flex items-center gap-2"><Icon size={14} className="text-slate-400" /><span className="text-slate-400 font-black">{label}:</span><span className="text-blue-600 font-black">{selected.length > 0 ? `${selected.length} la doortay` : "Dhammaan"}</span></div>
+          <ChevronDown size={14} className="text-slate-400" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-2 rounded-[1.5rem] border-slate-100 shadow-2xl z-50 font-black">
+        <div className="space-y-1 max-h-60 overflow-y-auto scrollbar-hide font-black">
+          {options.map((opt) => (
+            <div key={opt} onClick={() => onToggle(opt)} className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50 cursor-pointer transition-all group font-black">
+              <span className={`text-[11px] font-black uppercase ${selected.includes(opt) ? 'text-blue-600' : 'text-slate-600'}`}>{opt}</span>
+              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selected.includes(opt) ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-200 bg-white'}`}>{selected.includes(opt) && <Check size={12} />}</div>
             </div>
-
-            <div className="bg-white rounded-[2rem] border shadow-sm w-full overflow-hidden">
-                {loading && students.length === 0 ? (
-                    <div className="py-32 flex flex-col items-center gap-4 w-full text-slate-400 font-bold">
-                        <Loader2 className="animate-spin text-blue-600" size={40} />
-                        <p className="animate-pulse uppercase">Ardayda waa la soo rarayaa...</p>
-                    </div>
-                ) : (
-                    <div className="w-full overflow-x-auto text-left font-bold">
-                        <Table>
-                            <TableHeader className="bg-slate-50">
-                                <TableRow>
-                                    <TableHead className="font-black text-slate-800 py-6 pl-10 uppercase tracking-widest text-[10px] text-left">Ardayga / Email</TableHead>
-                                    <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px] text-left">Waalidka</TableHead>
-                                    <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px] text-left">Taleefannada</TableHead>
-                                    <TableHead className="font-black text-slate-800 uppercase tracking-widest text-[10px] text-left">Status</TableHead>
-                                    <TableHead className="text-right font-black text-slate-800 pr-10 uppercase tracking-widest text-[10px]">Tallaabo</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {students.map((student) => (
-                                    <TableRow key={student.id} className="hover:bg-slate-50/50 transition-all border-slate-100">
-                                        <TableCell className="py-6 pl-10">
-                                            <div className="flex items-center gap-4 text-left font-bold">
-                                                <div className={`w-12 h-12 rounded-2xl text-white flex items-center justify-center font-black shadow-lg text-lg shrink-0 ${student.status === 'Inactive' ? 'bg-slate-400' : 'bg-gradient-to-br from-blue-600 to-indigo-700 shadow-blue-100'}`}>
-                                                    {student.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <div className="flex flex-col text-left font-bold">
-                                                    <p className="font-black text-slate-800 capitalize text-base tracking-tight">{student.name}</p>
-                                                    <p className="text-[11px] text-slate-400 font-bold uppercase flex items-center gap-1.5 tracking-wider truncate max-w-xs mt-0.5">
-                                                        <Mail size={12} className="text-blue-500 shrink-0" /> {student.email}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-left font-bold">
-                                            <div className="flex flex-col gap-1.5 text-left">
-                                                <p className="text-sm font-bold text-slate-700 flex items-center gap-2 uppercase tracking-tighter">
-                                                    <UserCircle size={16} className="text-slate-400" /> {student.parentName || "N/A"}
-                                                </p>
-                                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 rounded-lg font-black px-2 py-0.5 w-fit text-[9px] uppercase">
-                                                    <School size={10} className="mr-1" /> {student.class?.name || student.grade}
-                                                </Badge>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-left font-bold">
-                                            <div className="flex flex-col gap-1.5 font-bold text-left">
-                                                <p className="text-[11px] text-slate-600 flex items-center gap-2">
-                                                    <Smartphone size={12} className="text-blue-500" /> {student.phone || "N/A"}
-                                                </p>
-                                                <p className="text-[11px] text-slate-600 flex items-center gap-2">
-                                                    <Phone size={12} className="text-emerald-500" /> {student.parentPhone || "N/A"}
-                                                </p>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-left font-bold">
-                                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ring-1 ${
-                                                student.status === 'Active' ? 'bg-emerald-50 text-emerald-600 ring-emerald-500/20' : 
-                                                student.status === 'Inactive' ? 'bg-amber-50 text-amber-600 ring-amber-500/20' : 
-                                                'bg-slate-50 text-slate-400 ring-slate-200'
-                                            }`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${student.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-current'}`} />
-                                                {student.status}
-                                            </div>
-                                        </TableCell>
-
-                                        <TableCell className="text-right pr-10">
-                                            <div className="flex justify-end items-center gap-2 text-right font-bold">
-                                                {student.status === "Pending" && (
-                                                    <div className="flex items-center gap-1 animate-in fade-in zoom-in text-right font-bold">
-                                                        <Button onClick={async () => { if (confirm(`Ansixi ${student.name}?`)) { await approveStudent(student.id); fetchStudents(query); } }} className="bg-emerald-600 hover:bg-emerald-700 text-white h-9 px-4 text-[10px] font-black uppercase rounded-xl">Approve</Button>
-                                                        <Button onClick={async () => { const r = prompt("Sababta?"); if (r) { await rejectStudent(student.id, r); fetchStudents(query); } }} className="bg-rose-500 hover:bg-rose-600 text-white h-9 px-4 text-[10px] font-black uppercase rounded-xl">Reject</Button>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex items-center gap-1 text-right font-bold">
-                                                    <Button
-                                                        onClick={async () => {
-                                                            if (confirm(`Bedel xaaladda ardaygan?`)) {
-                                                                await toggleStudentStatus(student.id, student.status);
-                                                                fetchStudents(query);
-                                                            }
-                                                        }}
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="w-10 h-10 rounded-xl text-slate-400 hover:text-amber-600 hover:bg-amber-50"
-                                                    >
-                                                        {student.status === "Active" ? <UserX size={18} /> : <UserCheck size={18} />}
-                                                    </Button>
-
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="w-10 h-10 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl">
-                                                                <Pencil size={18} />
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="rounded-[2rem] max-w-2xl border-none shadow-2xl overflow-hidden text-left font-bold">
-                                                            <DialogHeader className="bg-slate-50 -m-6 p-8 mb-4 border-b text-left">
-                                                                <DialogTitle className="text-2xl font-black text-slate-800">Cusboonaysii Xogta</DialogTitle>
-                                                            </DialogHeader>
-                                                            <form
-                                                                onSubmit={async (e) => {
-                                                                    e.preventDefault();
-                                                                    await updateStudent(new FormData(e.currentTarget));
-                                                                    fetchStudents(query);
-                                                                }}
-                                                                className="space-y-4 pt-2 text-left"
-                                                            >
-                                                                <input type="hidden" name="id" value={student.id} />
-                                                                <StudentFormFields student={student} />
-                                                                <Button type="submit" className="w-full bg-blue-700 hover:bg-blue-800 h-14 rounded-xl font-black text-lg mt-4">Badal Xogta</Button>
-                                                            </form>
-                                                        </DialogContent>
-                                                    </Dialog>
-
-                                                    <Button
-                                                        onClick={() => handleDelete(student.id)}
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="w-10 h-10 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-            </div>
+          ))}
         </div>
-    );
+      </PopoverContent>
+    </Popover>
+  );
 }
