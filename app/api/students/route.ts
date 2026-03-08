@@ -1,61 +1,74 @@
 import db from "@/lib/db";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client"; // Soo xigo Prisma types
+import { Prisma, EducationLevel } from "@prisma/client";
 
-export const dynamic = 'force-dynamic';
-
-/**
- * GET: Soo xigashada ardayda iyadoo la adeegsanayo miirayaal dhowr ah.
- * Hadda waa Type-safe maadaama database-ka iyo Prisma Client ay is-waafaqsan yihiin.
- */
-export async function GET(codsiga: Request) {
-  const { searchParams } = new URL(codsiga.url);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
   
-  const heerarkaStr = searchParams.get("levels");
-  const xaaladahaStr = searchParams.get("statuses");
+  // 1. Pagination Params
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = 10; 
+  const skip = (page - 1) * limit;
+
+  // 2. Filter Params
+  const heerarkaRaw = searchParams.get("levels")?.split(",").filter(Boolean) || [];
+  const xaaladaha = searchParams.get("statuses")?.split(",").filter(Boolean) || [];
   const raadin = searchParams.get("query") || "";
 
-  const heerarka = heerarkaStr ? heerarkaStr.split(",") : [];
-  const xaaladaha = xaaladahaStr ? xaaladahaStr.split(",") : [];
-
   try {
-    // Dhisidda miiraha (Filter) iyadoo la isticmaalayo Prisma types halkii 'any' laga isticmaali lahaa
+    // 3. Dhisidda Sifeeyaha (Where Clause)
     const sifeeye: Prisma.StudentWhereInput = {
-      // A. Miiraha Raadinta (Magaca ama Email-ka)
       ...(raadin && {
         OR: [
           { name: { contains: raadin, mode: 'insensitive' } },
           { email: { contains: raadin, mode: 'insensitive' } },
         ],
       }),
-
-      // B. Miiraha Xaaladda (Active, Inactive, Pending)
       ...(xaaladaha.length > 0 && {
         status: { in: xaaladaha }
       }),
-
-      // C. Miiraha Heerka Waxbarashada (Level)
-      ...(heerarka.length > 0 && {
+      // XALKA "ANY": Waxaan u beddelnay EducationLevel[] (Strict Type)
+      ...(heerarkaRaw.length > 0 && {
         class: {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          level: { in: heerarka as any[] } 
+          level: { in: heerarkaRaw as EducationLevel[] }
         }
       })
     };
 
-    const ardayda = await db.student.findMany({
-      where: sifeeye,
-      include: {
-        class: true, 
+    // 4. Parallel Queries (Si uu u noqdo mid aad u dhakhso badan)
+    const [students, total, activeCount, pendingCount] = await Promise.all([
+      db.student.findMany({
+        where: sifeeye,
+        include: { class: true },
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: skip,
+      }),
+      db.student.count({ where: sifeeye }),
+      db.student.count({ where: { status: "Active" } }),
+      db.student.count({ where: { status: "Pending" } }),
+    ]);
+
+    // 5. Soo celinta Natiijada
+    return NextResponse.json({
+      students,
+      pagination: {
+        total,
+        pageCount: Math.ceil(total / limit),
+        currentPage: page
       },
-      orderBy: { createdAt: "desc" },
+      stats: {
+        totalAll: total,
+        active: activeCount,
+        pending: pendingCount
+      }
     });
 
-    return NextResponse.json(ardayda);
   } catch (error) {
-    console.error("Cillad ka timid API-ga ardayda:", error);
+    // XALKA "UNUSED-VARS": Waxaan u log-garaynay error-ka si loo isticmaalo variable-ka
+    console.error("API Error - Students Page:", error);
     return NextResponse.json(
-      { error: "Laguma guuleysan in la soo xigto xogta ardayda xilligan." }, 
+      { error: "Waa lagu guuleysan waayay soo raridda xogta ardayda" }, 
       { status: 500 }
     );
   }
